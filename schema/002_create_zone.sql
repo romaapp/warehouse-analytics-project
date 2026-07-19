@@ -11,6 +11,21 @@ CREATE TABLE zone (
         UNIQUE(warehouse_id,zone_name),
 
     CONSTRAINT chk_zone_type
-                  CHECK (zone_type IN ('RECEIVING', 'STORAGE', 'PICKING', 'SHIPPING')
-                      )
+                  CHECK (zone_type IN ('RECEIVING',
+                                       'STORAGE',
+                                       'PICKING',
+                                       'SHIPPING')
+                      ),
+
+    CONSTRAINT chk_zone_type_not_empty
+                  CHECK (trim(zone_type)<> ''),
+
+    CONSTRAINT chk_zone_name
+                  CHECK (trim(zone_name)<> '')
 );
+
+COMMENT ON TABLE zone IS 'Технозоны';
+COMMENT ON COLUMN zone.warehouse_id IS 'Идентификатор склада';
+COMMENT ON COLUMN zone.zone_id IS 'Идентификатор зоны';
+COMMENT ON COLUMN zone.zone_name IS 'Наименование зоны';
+COMMENT ON COLUMN zone.zone_type IS 'Тип технологической зоны';
