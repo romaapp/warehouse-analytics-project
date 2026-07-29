@@ -1,1 +1,1 @@
-select * from stock
+select * from product
