@@ -2,7 +2,6 @@ CREATE TABLE product (
     product_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     sku VARCHAR(50) NOT NULL,
     product_name VARCHAR(255) NOT NULL,
---    owner_id INTEGER NOT NULL,
     base_unit TEXT NOT NULL,
     weight NUMERIC(10,3) NOT NULL,
     length NUMERIC(10,2) NOT NULL,
@@ -12,6 +11,7 @@ CREATE TABLE product (
     lot_tracking BOOLEAN NOT NULL DEFAULT FALSE,
     serial_tracking BOOLEAN NOT NULL DEFAULT FALSE,
     expiration_tracking BOOLEAN NOT NULL DEFAULT FALSE,
+    shelf_life_days INTEGER,
 
     CONSTRAINT uq_product_sku
                      UNIQUE(sku),
@@ -30,7 +30,11 @@ CREATE TABLE product (
                      CHECK(width >0),
 
     CONSTRAINT chk_product_height
-                     CHECK(height >0)
+                     CHECK(height >0),
+
+    CONSTRAINT chk_product_shelf_life
+                     CHECK ( shelf_life_days IS NULL
+                         OR shelf_life_days>0)
 
 );
 
@@ -47,4 +51,4 @@ COMMENT ON COLUMN product.active IS 'Активность';
 COMMENT ON COLUMN product.lot_tracking IS 'Отслеживание партии';
 COMMENT ON COLUMN product.serial_tracking IS'Отслеживание серийного номера';
 COMMENT ON COLUMN product.expiration_tracking IS 'Отслеживание срока годности';
---COMMENT ON COLUMN product.owner_id IS 'Владелец запаса';
+COMMENT ON COLUMN product.shelf_life_days IS 'Срок годности в днях';

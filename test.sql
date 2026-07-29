@@ -1,1 +1,1 @@
-select  * from owner_product
+select * from stock

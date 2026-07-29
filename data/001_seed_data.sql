@@ -90,41 +90,41 @@ INSERT INTO product (sku,
                      height,
                      lot_tracking,
                      serial_tracking,
-                     expiration_tracking
+                     expiration_tracking,
+                     shelf_life_days
 )
 VALUES
-('NES0001', 'Кофе Nescafe Gold 190 г', 'PCS', 0.190, 8, 8, 15, TRUE, FALSE, TRUE),
-('NES0002', 'Кофе Nescafe Classic 250 г', 'PCS', 0.250, 9, 9, 18, TRUE, FALSE, TRUE),
-('UNI0001', 'Шампунь Dove 400 мл', 'PCS', 0.450, 6, 6, 22, FALSE, FALSE, FALSE),
-('UNI0002', 'Гель для душа Axe 250 мл', 'PCS', 0.300, 5, 5, 20, FALSE, FALSE, FALSE),
-('CC0001', 'Coca-Cola 1.5 л', 'PCS', 1.600, 9, 9, 32, TRUE, FALSE, TRUE),
-('CC0002', 'Fanta 1.5 л', 'PCS', 1.600, 9, 9, 32, TRUE, FALSE, TRUE),
-('SPR0001', 'Вода минеральная Borjomi 0.5 л', 'PCS', 0.550, 7, 7, 20, TRUE, FALSE, FALSE),
-('SPR0002', 'Сок J7 яблочный 1 л', 'PCS', 1.100, 8, 8, 25, TRUE, FALSE, FALSE),
-('MILK001', 'Молоко Parmalat 1 л', 'PCS', 1.050, 8, 8, 22, TRUE, FALSE, TRUE),
-('MILK002', 'Йогурт Danone 125 г', 'PCS', 0.140, 5, 5, 10, TRUE, FALSE, TRUE),
-('CHS0001', 'Сыр Hochland 200 г', 'PCS', 0.220, 6, 6, 12, TRUE, FALSE, TRUE),
-('CHS0002', 'Творог Простоквашино 400 г', 'PCS', 0.420, 7, 7, 14, TRUE, FALSE, TRUE),
-('MEAT001', 'Фарш свиной 500 г', 'PCS', 0.520, 8, 8, 15, TRUE, FALSE, TRUE),
-('MEAT002', 'Куриная грудка 1 кг', 'PCS', 1.050, 10, 10, 18, TRUE, FALSE, TRUE),
-('FISH001', 'Филе трески 600 г', 'PCS', 0.620, 9, 9, 16, TRUE, FALSE, TRUE),
-('VEG001', 'Картофель 2.5 кг', 'PCS', 2.600, 12, 12, 20, TRUE, FALSE, TRUE),
-('VEG002', 'Морковь 1 кг', 'PCS', 1.050, 8, 8, 15, TRUE, FALSE, TRUE),
-('FRT001', 'Яблоки 1 кг', 'PCS', 1.050, 9, 9, 16, TRUE, FALSE, TRUE),
-('FRT002', 'Бананы 1 кг', 'PCS', 1.050, 9, 9, 18, TRUE, FALSE, TRUE),
-('BAK001', 'Хлеб ржаной 400 г', 'PCS', 0.450, 7, 7, 12, TRUE, FALSE, TRUE),
-('BAK002', 'Батон нарезной 350 г', 'PCS', 0.400, 6, 6, 14, TRUE, FALSE, TRUE),
-('SWT001', 'Шоколад Alpen Gold 100 г', 'PCS', 0.120, 4, 4, 8, TRUE, TRUE, FALSE),
-('SWT002', 'Печенье Юбилейное 200 г', 'PCS', 0.220, 6, 6, 10, TRUE, TRUE, FALSE),
-('TEA001', 'Чай Lipton 50 пак.', 'PCS', 0.150, 5, 5, 12, TRUE, TRUE, FALSE),
-('TEA002', 'Чай Greenfield 100 г', 'PCS', 0.120, 4, 4, 10, TRUE, TRUE, FALSE),
-('OIL001', 'Масло подсолн. Золотая Семечка 1 л', 'PCS', 0.950, 8, 8, 25, TRUE, TRUE, FALSE),
-('OIL002', 'Масло сливочное 180 г', 'PCS', 0.200, 5, 5, 10, TRUE, TRUE, FALSE),
-('PAST001', 'Макароны Barilla 500 г', 'PCS', 0.520, 7, 7, 18, TRUE, TRUE, FALSE),
-('PAST002', 'Рис Мистраль 800 г', 'PCS', 0.850, 8, 8, 20, TRUE, TRUE, FALSE),
-('CEREAL001', 'Овсянка 500 г', 'PCS', 0.520, 7, 7, 16, TRUE, TRUE, FALSE),
-('CEREAL002', 'Гречка 900 г', 'PCS', 0.950, 8, 8, 20, TRUE, TRUE, FALSE);
-
+('NES0001', 'Кофе Nescafe Gold 190 г', 'PCS', 0.190, 8, 8, 15, TRUE, FALSE, TRUE, 720),
+('NES0002', 'Кофе Nescafe Classic 250 г', 'PCS', 0.250, 9, 9, 18, TRUE, FALSE, TRUE, 720),
+('UNI0001', 'Шампунь Dove 400 мл', 'PCS', 0.450, 6, 6, 22, FALSE, FALSE, FALSE, NULL),
+('UNI0002', 'Гель для душа Axe 250 мл', 'PCS', 0.300, 5, 5, 20, FALSE, FALSE, FALSE, NULL),
+('CC0001', 'Coca-Cola 1.5 л', 'PCS', 1.600, 9, 9, 32, TRUE, FALSE, TRUE, 365),
+('CC0002', 'Fanta 1.5 л', 'PCS', 1.600, 9, 9, 32, TRUE, FALSE, TRUE, 365),
+('SPR0001', 'Вода минеральная Borjomi 0.5 л', 'PCS', 0.550, 7, 7, 20, TRUE, FALSE, FALSE, 365),
+('SPR0002', 'Сок J7 яблочный 1 л', 'PCS', 1.100, 8, 8, 25, TRUE, FALSE, FALSE, 365),
+('MILK001', 'Молоко Parmalat 1 л', 'PCS', 1.050, 8, 8, 22, TRUE, FALSE, TRUE, 14),
+('MILK002', 'Йогурт Danone 125 г', 'PCS', 0.140, 5, 5, 10, TRUE, FALSE, TRUE, 30),
+('CHS0001', 'Сыр Hochland 200 г', 'PCS', 0.220, 6, 6, 12, TRUE, FALSE, TRUE, 60),
+('CHS0002', 'Творог Простоквашино 400 г', 'PCS', 0.420, 7, 7, 14, TRUE, FALSE, TRUE, 14),
+('MEAT001', 'Фарш свиной 500 г', 'PCS', 0.520, 8, 8, 15, TRUE, FALSE, TRUE, 7),
+('MEAT002', 'Куриная грудка 1 кг', 'PCS', 1.050, 10, 10, 18, TRUE, FALSE, TRUE, 7),
+('FISH001', 'Филе трески 600 г', 'PCS', 0.620, 9, 9, 16, TRUE, FALSE, TRUE, 7),
+('VEG001', 'Картофель 2.5 кг', 'PCS', 2.600, 12, 12, 20, TRUE, FALSE, TRUE, 14),
+('VEG002', 'Морковь 1 кг', 'PCS', 1.050, 8, 8, 15, TRUE, FALSE, TRUE, 14),
+('FRT001', 'Яблоки 1 кг', 'PCS', 1.050, 9, 9, 16, TRUE, FALSE, TRUE, 14),
+('FRT002', 'Бананы 1 кг', 'PCS', 1.050, 9, 9, 18, TRUE, FALSE, TRUE, 14),
+('BAK001', 'Хлеб ржаной 400 г', 'PCS', 0.450, 7, 7, 12, TRUE, FALSE, TRUE, 3),
+('BAK002', 'Батон нарезной 350 г', 'PCS', 0.400, 6, 6, 14, TRUE, FALSE, TRUE, 3),
+('SWT001', 'Шоколад Alpen Gold 100 г', 'PCS', 0.120, 4, 4, 8, TRUE, TRUE, FALSE, 365),
+('SWT002', 'Печенье Юбилейное 200 г', 'PCS', 0.220, 6, 6, 10, TRUE, TRUE, FALSE, 60),
+('TEA001', 'Чай Lipton 50 пак.', 'PCS', 0.150, 5, 5, 12, TRUE, TRUE, FALSE, 720),
+('TEA002', 'Чай Greenfield 100 г', 'PCS', 0.120, 4, 4, 10, TRUE, TRUE, FALSE, 720),
+('OIL001', 'Масло подсолн. Золотая Семечка 1 л', 'PCS', 0.950, 8, 8, 25, TRUE, TRUE, FALSE, 365),
+('OIL002', 'Масло сливочное 180 г', 'PCS', 0.200, 5, 5, 10, TRUE, TRUE, FALSE, 60),
+('PAST001', 'Макароны Barilla 500 г', 'PCS', 0.520, 7, 7, 18, TRUE, TRUE, FALSE, 365),
+('PAST002', 'Рис Мистраль 800 г', 'PCS', 0.850, 8, 8, 20, TRUE, TRUE, FALSE, 720),
+('CEREAL001', 'Овсянка 500 г', 'PCS', 0.520, 7, 7, 16, TRUE, TRUE, FALSE, 720),
+('CEREAL002', 'Гречка 900 г', 'PCS', 0.950, 8, 8, 20, TRUE, TRUE, FALSE, 720);
 
 --OWNER PRODUCT
 
@@ -164,3 +164,32 @@ VALUES
 (3,29,'PAST-4Z1'),
 (3,30,'CEREAL-6A7'),
 (3,31,'CEREAL-8B9');
+
+
+--TRANSPORT_PACKAGE
+
+INSERT INTO transport_package (sscc,
+                               package_code,
+                               package_type,
+                               location_id,
+                               package_status,
+                               gross_weight,
+                               owner_id,
+                               barcode,
+                               created_by
+)
+SELECT
+    LPAD(gs::text,18,'0'),
+    'PAL' || LPAD(gs::text,6,'0'),
+    'PALLET',
+    gs,
+    'STORED',
+    ROUND((random()*700+100)::numeric,3),
+    ((gs-1)%3)+1,
+    'BC' ||LPAD(gs::text,10,'0'),
+    ((gs-1)%10)+1
+FROM generate_series(1,200) AS gs;
+
+
+
+
