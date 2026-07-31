@@ -307,3 +307,245 @@ WHERE
 ORDER BY
     p.sku ASC;
 
+
+--14
+
+SELECT
+    o.owner_name,
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity)-SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        owner_product AS op
+ON op.product_id = p.product_id
+
+JOIN
+        owner AS o
+ON o.owner_id = op.owner_id
+
+GROUP BY
+    p.sku,
+    p.product_name,
+    o.owner_name
+
+HAVING
+    (SUM(s.quantity)-SUM(s.reserved_qty)) > 0
+
+ORDER BY
+    o.owner_name ASC,
+    available_quantity DESC;
+
+
+--15
+
+SELECT
+    tp.package_code,
+    tp.package_type,
+    tp.block_code,
+    p.sku,
+    p.product_name,
+    s.quantity,
+    l.address
+
+FROM
+    transport_package AS tp
+
+JOIN
+    stock AS s
+ON s.package_id = tp.package_id
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+WHERE
+    tp.package_status = 'STORED'
+AND tp.block_code IS NOT NULL
+
+ORDER BY
+    tp.block_code ASC,
+    p.sku ASC;
+
+
+--16
+
+SELECT
+    p.sku,
+    p.product_name,
+    tp.package_code,
+    s.quantity,
+    s.expiration_date
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+WHERE
+    s.expiration_date IS NOT NULL
+    AND s.expiration_date > CURRENT_DATE
+AND s.expiration_date <= (CURRENT_DATE + INTERVAL '30 days')
+AND s.quantity > 0
+
+ORDER BY
+    s.expiration_date ASC,
+    p.sku ASC;
+
+
+--17
+
+SELECT
+    p.sku,
+    p.product_name,
+    tp.package_code,
+    s.quantity,
+    s.expiration_date,
+    l.address
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+WHERE
+    s.expiration_date IS NOT NULL
+AND s.quantity > 0
+AND tp.package_status = 'STORED'
+AND s.expiration_date > CURRENT_DATE
+
+ORDER BY
+    s.expiration_date ASC,
+    p.sku ASC,
+    l.address ASC;
+
+
+--18
+
+SELECT
+    p.sku,
+    p.product_name,
+    tp.package_code,
+    s.quantity,
+    s.expiration_date,
+    l.address
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+WHERE
+    s.expiration_date IS NOT NULL
+AND s.quantity > 0
+AND tp.package_status = 'STORED'
+AND s.expiration_date < CURRENT_DATE
+
+ORDER BY
+    s.expiration_date ASC,
+    p.sku ASC,
+    l.address ASC;
+
+
+--19
+
+SELECT
+    p.sku,
+    p.product_name,
+    tp.package_code,
+    s.quantity,
+    s.expiration_date,
+    l.address
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+WHERE
+    s.expiration_date IS NOT NULL
+AND s.quantity > 0
+AND tp.package_status = 'STORED'
+AND s.expiration_date = CURRENT_DATE
+
+ORDER BY
+    p.sku ASC,
+    l.address ASC;
+
+
+--20
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity)-SUM(s.reserved_qty)) AS available_quantity,
+    ROUND((SUM(s.reserved_qty)/SUM(s.quantity)*100),2) AS reserved_percent
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+HAVING
+    SUM(s.quantity) > 0
+AND (SUM(s.reserved_qty)/SUM(s.quantity)*100) > 20
+
+ORDER BY
+    reserved_percent DESC;
