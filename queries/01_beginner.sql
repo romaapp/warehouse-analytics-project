@@ -529,6 +529,28 @@ SELECT
     p.product_name,
     SUM(s.quantity) AS total_quantity,
     SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity)-SUM(s.reserved_qty)) AS available_quantity
+FROM
+    stock AS s
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+GROUP BY
+    p.sku,
+    p.product_name
+HAVING
+    SUM(s.reserved_qty) > 0
+ORDER BY
+    total_reserved DESC;
+
+
+--21
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
     (SUM(s.quantity)-SUM(s.reserved_qty)) AS available_quantity,
     ROUND((SUM(s.reserved_qty)/SUM(s.quantity)*100),2) AS reserved_percent
 
@@ -549,3 +571,416 @@ AND (SUM(s.reserved_qty)/SUM(s.quantity)*100) > 20
 
 ORDER BY
     reserved_percent DESC;
+
+
+--22
+
+SELECT
+    l.address,
+    l.location_status,
+    COUNT(tp.sscc) AS package_count,
+    SUM(tp.gross_weight) AS total_gross_weight
+
+FROM
+    location AS l
+
+LEFT JOIN
+        transport_package AS tp
+ON tp.location_id = l.location_id
+AND tp.package_status ='STORED'
+
+GROUP BY
+    l.address,
+    l.location_status
+
+HAVING
+    COUNT(tp.sscc) > 0
+
+ORDER BY
+    package_count DESC;
+
+
+--23
+
+SELECT
+    l.address,
+    l.capacity,
+    COUNT(tp.sscc) AS package_count,
+    ROUND(
+            COUNT(tp.sscc)::numeric/l.capacity*100,2) AS occupancy_percent
+
+FROM
+    location AS l
+
+LEFT JOIN
+        transport_package AS tp
+ON tp.location_id = l.location_id
+AND tp.package_status = 'STORED'
+
+GROUP BY
+    l.address,
+    l.capacity
+
+HAVING
+    (COUNT(tp.sscc)::numeric/l.capacity*100) > 80
+
+ORDER BY
+    occupancy_percent DESC;
+
+
+--24
+
+SELECT
+    z.zone_name,
+    z.zone_type,
+    COUNT(tp.sscc) AS package_count,
+    SUM(s.quantity) AS total_quantity
+
+FROM
+    zone AS z
+
+JOIN
+    location AS l
+ON l.zone_id = z.zone_id
+
+JOIN
+    transport_package AS tp
+ON tp.location_id = l.location_id
+
+JOIN
+        stock AS s
+ON s.package_id = tp.package_id
+
+WHERE
+    tp.package_status = 'STORED'
+
+GROUP BY
+    z.zone_name,
+    z.zone_type
+
+ORDER BY
+    total_quantity DESC,
+    zone_name ASC;
+
+
+--25
+
+SELECT
+    w.warehouse_code,
+    w.warehouse_name,
+    COUNT(tp.sscc) AS package_count,
+    SUM(s.quantity) AS total_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+JOIN
+        zone AS z
+ON z.zone_id = l.zone_id
+
+JOIN
+        warehouse AS w
+ON w.warehouse_id = z.warehouse_id
+
+WHERE
+    tp.package_status = 'STORED'
+
+GROUP BY
+    w.warehouse_code,
+    w.warehouse_name
+
+ORDER BY
+    total_quantity DESC,
+    w.warehouse_code ASC;
+
+
+--26
+
+SELECT
+    w.warehouse_code,
+    w.warehouse_name,
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+JOIN
+        zone AS z
+ON z.zone_id = l.zone_id
+
+JOIN
+        warehouse AS w
+ON w.warehouse_id = z.warehouse_id
+
+WHERE
+    tp.package_status = 'STORED'
+
+GROUP BY
+    w.warehouse_code,
+    p.sku,
+    w.warehouse_name,
+    p.product_name
+
+HAVING
+    (SUM(s.quantity) - SUM(s.reserved_qty)) > 0
+
+ORDER BY
+    warehouse_code ASC,
+    available_quantity DESC,
+    sku ASC;
+
+
+--27
+
+SELECT
+    w.warehouse_code,
+    w.warehouse_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+JOIN
+        zone AS z
+ON z.zone_id = l.zone_id
+
+JOIN
+        warehouse AS w
+ON w.warehouse_id = z.warehouse_id
+
+WHERE
+    tp.package_status = 'STORED'
+
+GROUP BY
+    w.warehouse_code,
+    w.warehouse_name
+
+HAVING
+    (SUM(s.quantity) - SUM(s.reserved_qty)) > 0
+
+ORDER BY
+    available_quantity DESC;
+
+
+--28
+
+SELECT
+    w.warehouse_code,
+    w.warehouse_name,
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity,
+    ROUND(SUM(s.reserved_qty)::numeric/SUM(s.quantity)*100,2) reserved_percent
+
+FROM
+    stock AS s
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+JOIN
+        zone AS z
+ON z.zone_id = l.zone_id
+
+JOIN
+        warehouse AS w
+ON w.warehouse_id = z.warehouse_id
+
+WHERE
+    tp.package_status = 'STORED'
+
+GROUP BY
+    w.warehouse_code,
+    w.warehouse_name,
+    p.sku,
+    p.product_name
+
+HAVING
+    SUM(s.quantity) > 0
+AND (SUM(s.reserved_qty)::numeric/SUM(s.quantity)*100) > 50
+
+ORDER BY
+    reserved_percent DESC,
+    warehouse_code ASC,
+    sku ASC;
+
+
+--29
+
+SELECT
+    o.owner_name,
+    COUNT(s.package_id) AS package_count,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity)-SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        owner_product AS op
+ON op.product_id = s.product_id
+
+JOIN
+        owner AS o
+ON o.owner_id = op.owner_id
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+AND tp.package_status = 'STORED'
+
+GROUP BY
+    o.owner_name
+
+HAVING
+    (SUM(s.quantity)-SUM(s.reserved_qty))  > 0
+
+ORDER BY
+    available_quantity DESC,
+    owner_name ASC;
+
+
+--30
+
+SELECT
+    s.stock_id,
+    s.package_id,
+    p.sku,
+    p.product_name,
+    s.quantity,
+    s.reserved_qty,
+    (s.quantity - s.reserved_qty) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+WHERE
+    s.reserved_qty >= s.quantity
+
+ORDER BY
+    available_quantity ASC,
+    p.sku ASC;
+
+
+--31
+
+SELECT
+    s.stock_id,
+    s.package_id,
+    p.sku,
+    p.product_name,
+    s.quantity,
+    s.reserved_qty,
+    (s.quantity - s.reserved_qty) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+WHERE
+    s.reserved_qty = 0
+AND  s.quantity > 0
+
+ORDER BY
+    s.quantity DESC,
+    p.sku ASC;
+
+
+--32
+
+WITH
+    product_totals AS(
+        SELECT SUM(quantity) AS total_quantity,
+               product_id
+        FROM stock
+        GROUP BY
+            product_id
+
+    ),
+
+avg_total_quantity AS (
+    SELECT AVG(total_quantity) AS avg_quantity
+    FROM product_totals
+    )
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity
+
+FROM
+    product AS p
+
+JOIN
+        stock AS s
+ON s.product_id = p.product_id
+
+CROSS JOIN
+        avg_total_quantity
+
+GROUP BY
+    p.sku,
+    p.product_name,
+    avg_total_quantity.avg_quantity
+
+HAVING
+    SUM(s.quantity) > avg_total_quantity.avg_quantity
+
+ORDER BY
+    total_quantity DESC;
+
+
+
