@@ -207,3 +207,80 @@ HAVING
 
 ORDER BY
     occupancy_percent DESC;
+
+
+-- 61
+-- Поиск товаров, которые имеют хотя бы одну stock-запись
+-- с доступным остатком менее 50 единиц.
+
+SELECT
+    p.sku,
+    p.product_name
+
+FROM
+    product AS p
+
+WHERE
+    p.product_id IN(
+        SELECT
+            s.product_id
+        FROM
+            stock AS s
+        WHERE
+            s.quantity - s.reserved_qty < 50
+        AND s.quantity - s.reserved_qty > 0
+        )
+
+ORDER BY
+    p.sku ASC;
+
+
+-- 62
+-- Поиск товаров, которые хранятся хотя бы в одной
+-- транспортной упаковке со статусом STORED.
+
+SELECT
+    p.sku,
+    p.product_name
+
+FROM
+    product AS p
+
+WHERE
+    p.product_id IN(
+        SELECT
+            s.product_id
+        FROM
+            stock AS s
+        JOIN
+                transport_package AS tp
+        ON tp.package_id = s.package_id
+        AND tp.package_status = 'STORED'
+        )
+
+ORDER BY
+    p.sku ASC;
+
+
+-- 63
+-- Поиск товаров, для которых существует хотя бы одна
+-- stock-запись с доступным остатком более 100 единиц.
+
+SELECT
+    p.sku,
+    p.product_name
+
+FROM
+    product AS p
+
+WHERE EXISTS(
+    SELECT 1
+    FROM
+        stock AS s
+    WHERE
+        s.product_id = p.product_id
+        AND s.quantity - s.reserved_qty > 100
+)
+
+ORDER BY
+    p.sku ASC;

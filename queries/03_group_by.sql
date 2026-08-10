@@ -838,3 +838,501 @@ ORDER BY
     l.address ASC;
 
 
+-- 47
+-- Поиск складов, на которых есть заблокированные транспортные упаковки.
+
+SELECT
+    w.warehouse_code,
+    w.warehouse_name,
+    COUNT(tp.block_code) AS blocked_packages,
+    SUM(tp.gross_weight) AS blocked_weight
+
+FROM
+    transport_package AS tp
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+JOIN
+        zone AS z
+ON z.zone_id = l.zone_id
+
+JOIN
+        warehouse AS w
+ON w.warehouse_id = z.warehouse_id
+
+WHERE
+    tp.package_status = 'STORED'
+AND tp.block_code IS NOT NULL
+
+GROUP BY
+    w.warehouse_code,
+    w.warehouse_name
+
+HAVING
+    COUNT(DISTINCT tp.package_id) >= 1
+
+ORDER BY
+    blocked_packages DESC,
+    w.warehouse_code ASC;
+
+
+-- 48
+-- Поиск складов, на которых есть товары с истекающим сроком годности
+-- в ближайшие 30 дней.
+
+SELECT
+    w.warehouse_code,
+    w.warehouse_name,
+    COUNT(DISTINCT p.product_id) AS product_count,
+    SUM(s.quantity) AS total_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+        ON p.product_id = s.product_id
+
+JOIN
+    transport_package AS tp
+        ON tp.package_id = s.package_id
+        AND tp.package_status = 'STORED'
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+JOIN
+        zone AS z
+ON z.zone_id = l.zone_id
+
+JOIN
+        warehouse AS w
+ON w.warehouse_id = z.warehouse_id
+
+WHERE
+    s.expiration_date IS NOT NULL
+  AND s.expiration_date >= CURRENT_DATE
+  AND s.expiration_date <= (CURRENT_DATE + INTERVAL '30 days')
+AND s.quantity > 0
+
+GROUP BY
+    w.warehouse_code,
+    w.warehouse_name
+
+ORDER BY
+    total_quantity DESC,
+    w.warehouse_code ASC;
+
+
+-- 49
+-- Поиск владельцев, у которых доступный остаток превышает 1000 единиц.
+
+SELECT
+    o.owner_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS reserved_quantity,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+        AND tp.package_status = 'STORED'
+
+JOIN
+        owner_product AS op
+ON op.product_id = s.product_id
+
+JOIN
+        owner AS o
+ON o.owner_id = op.owner_id
+
+GROUP BY
+    o.owner_name
+
+HAVING
+    (SUM(s.quantity) - SUM(s.reserved_qty)) > 1000
+
+ORDER BY
+    available_quantity DESC,
+    owner_name ASC;
+
+
+-- 50
+-- Поиск товаров, у которых весь доступный остаток находится
+-- только в одной транспортной упаковке.
+
+SELECT
+    p.sku,
+    p.product_name,
+    COUNT(DISTINCT s.package_id) AS package_count,
+    SUM(s.quantity) AS total_quantity,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+AND tp.package_status = 'STORED'
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+HAVING
+    COUNT(DISTINCT s.package_id) = 1
+AND (SUM(s.quantity) - SUM(s.reserved_qty)) > 0
+
+ORDER BY
+    available_quantity DESC,
+    p.sku ASC;
+
+
+-- 51
+-- Поиск товаров, которые хранятся в нескольких транспортных упаковках,
+-- но при этом имеют менее 100 единиц доступного остатка.
+
+SELECT
+    p.sku,
+    p.product_name,
+    COUNT(DISTINCT s.package_id) AS package_count,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+JOIN
+        transport_package AS tp
+ON tp.package_id = s.package_id
+AND tp.package_status = 'STORED'
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+HAVING
+    COUNT(DISTINCT s.package_id) > 1
+AND (SUM(s.quantity) - SUM(s.reserved_qty)) > 0
+AND (SUM(s.quantity) - SUM(s.reserved_qty)) < 100
+
+ORDER BY
+    available_quantity ASC,
+    package_count DESC,
+    p.sku ASC;
+
+
+-- 52
+-- Классификация товаров по доступному остатку.
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity,
+    CASE
+        WHEN (SUM(s.quantity) - SUM(s.reserved_qty)) = 0 THEN 'OUT_OF_STOCK'
+        WHEN (SUM(s.quantity) - SUM(s.reserved_qty)) < 100 THEN 'LOW'
+        WHEN (SUM(s.quantity) - SUM(s.reserved_qty)) < 500 THEN 'MEDIUM'
+ELSE 'HIGH'
+END  AS stock_category
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+ORDER BY
+    available_quantity ASC,
+    p.sku ASC;
+
+
+-- 53
+-- Классификация товаров по проценту зарезервированного остатка.
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(s.reserved_qty) AS total_reserved,
+    ROUND(SUM(s.reserved_qty)/SUM(s.quantity)*100,2) AS reserved_percent,
+    CASE
+        WHEN (SUM(s.reserved_qty)/SUM(s.quantity)*100) = 0 THEN 'NO_RESERVE'
+        WHEN (SUM(s.reserved_qty)/SUM(s.quantity)*100) < 30 THEN 'LOW'
+        WHEN (SUM(s.reserved_qty)/SUM(s.quantity)*100) < 70 THEN 'MEDIUM'
+ELSE 'HIGH'
+END  AS reservation_level
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+HAVING
+    SUM(s.quantity) > 0
+
+ORDER BY
+    reserved_percent DESC,
+    p.sku ASC;
+
+
+--54
+-- Подсчёт количества транспортных упаковок разных статусов
+-- по каждому складу.
+
+SELECT
+    w.warehouse_code,
+    w.warehouse_name,
+    SUM(
+    CASE
+        WHEN tp.package_status = 'STORED' THEN 1
+    ELSE 0
+    END
+    ) AS stored_count,
+    SUM(
+    CASE
+        WHEN tp.block_code IS NOT NULL THEN 1
+    ELSE 0
+    END
+    ) AS blocked_count,
+    COUNT(tp.package_id) AS total_count
+
+FROM
+    transport_package AS tp
+
+JOIN
+        location AS l
+ON l.location_id = tp.location_id
+
+JOIN
+        zone AS z
+ON z.zone_id = l.zone_id
+
+JOIN
+        warehouse AS w
+ON w.warehouse_id = z.warehouse_id
+
+GROUP BY
+    w.warehouse_code,
+    w.warehouse_name
+
+ORDER BY
+    total_count DESC,
+    w.warehouse_code ASC;
+
+
+-- 55
+-- Подсчёт количества товара в зависимости от наличия резерва.
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    SUM(
+    CASE
+        WHEN s.reserved_qty > 0 THEN s.quantity
+    ELSE 0
+    END
+    ) AS reserved_quantity,
+    SUM(
+            CASE
+                WHEN s.reserved_qty = 0 THEN s.quantity
+    ELSE 0
+    END
+    ) AS free_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+ORDER BY
+    free_quantity DESC,
+    p.sku ASC;
+
+
+-- 56
+-- Подсчёт количества stock-записей и количества товара
+-- с резервом и без резерва по каждому товару.
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(
+    CASE
+        WHEN s.reserved_qty > 0 THEN 1
+    ELSE 0
+    END
+    ) AS reserved_stock_count,
+
+    SUM(
+            CASE
+                WHEN s.reserved_qty = 0 THEN 1
+    ELSE 0
+    END
+    ) AS free_stock_count,
+    SUM(
+    CASE
+        WHEN s.reserved_qty > 0 THEN s.quantity
+    ELSE 0
+    END
+    ) AS reserved_quantity,
+    SUM(
+            CASE
+                WHEN s.reserved_qty = 0 THEN s.quantity
+    ELSE 0
+    END
+    ) AS free_quantity
+
+FROM
+    stock AS s
+
+JOIN
+        product AS p
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+ORDER BY
+    reserved_quantity DESC,
+    p.sku ASC;
+
+
+-- 57
+-- Классификация stock-записей по доступному количеству.
+
+SELECT
+    s.stock_id,
+    s.product_id,
+    s.quantity,
+    s.reserved_qty,
+    s.quantity - s.reserved_qty AS available_quantity,
+
+    CASE
+        WHEN s.quantity - s.reserved_qty  = 0 THEN 'EMPTY'
+    WHEN s.quantity - s.reserved_qty < 50 THEN 'LOW'
+    WHEN s.quantity - s.reserved_qty <100 THEN 'MEDIUM'
+    ELSE 'OK'
+    END
+     AS availability_status
+
+FROM
+    stock AS s
+
+ORDER BY
+    available_quantity ASC,
+    s.stock_id ASC;
+
+
+-- 58
+-- Поиск всех товаров и расчёт их общего остатка.
+
+SELECT
+    p.sku,
+    p.product_name,
+    COALESCE(SUM(s.quantity),0) AS total_quantity
+
+FROM
+    product AS p
+
+LEFT JOIN
+        stock AS s
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+ORDER BY
+    total_quantity DESC,
+    p.sku ASC;
+
+
+-- 59
+-- Поиск всех товаров и расчёт общего и зарезервированного остатка.
+
+SELECT
+    p.sku,
+    p.product_name,
+    COALESCE(SUM(s.quantity),0) AS total_quantity,
+    COALESCE(SUM(s.reserved_qty),0) AS total_reserved,
+    COALESCE(SUM(s.quantity)-SUM(s.reserved_qty),0) AS available_quantity
+
+FROM
+    product AS p
+
+LEFT JOIN
+        stock AS s
+ON s.product_id = p.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+ORDER BY
+    available_quantity DESC,
+    p.sku ASC;
+
+
+-- 60
+-- Расчёт процента зарезервированного товара по каждому товару.
+
+SELECT
+    p.sku,
+    p.product_name,
+    COALESCE(SUM(s.quantity),0) AS total_quantity,
+    COALESCE(SUM(s.reserved_qty),0) AS reserved_quantity,
+    COALESCE(ROUND(SUM(s.reserved_qty)/NULLIF(SUM(s.quantity),0)*100,2),0) AS reserved_percent
+
+FROM
+    product AS p
+
+LEFT JOIN
+        stock AS s
+ON s.product_id = p.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+ORDER BY
+    reserved_percent DESC,
+    p.sku ASC;
+
