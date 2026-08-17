@@ -284,3 +284,37 @@ WHERE EXISTS(
 
 ORDER BY
     p.sku ASC;
+
+
+-- 64
+-- Поиск товаров, для которых существует хотя бы одна
+-- транспортная упаковка со статусом STORED,
+-- находящаяся в заблокированной ячейке.
+
+SELECT
+    p.sku,
+    p.product_name
+
+FROM
+    product AS p
+
+WHERE EXISTS(
+    SELECT 1
+    FROM
+        stock AS s
+    JOIN
+            transport_package AS tp
+    ON tp.package_id = s.package_id
+    WHERE
+        s.product_id = p.product_id
+      AND tp.package_status = 'STORED'
+      AND tp.block_code IS NOT NULL
+)
+
+ORDER BY
+    p.sku ASC;
+
+
+-- 65
+-- Поиск товаров, у которых нет ни одной stock-записи
+-- с положительным доступным остатком.
