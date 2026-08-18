@@ -318,3 +318,113 @@ ORDER BY
 -- 65
 -- Поиск товаров, у которых нет ни одной stock-записи
 -- с положительным доступным остатком.
+
+SELECT
+    p.sku,
+    p.product_name
+
+FROM product AS p
+
+WHERE NOT EXISTS(
+       SELECT 1
+    FROM
+    stock AS s
+    WHERE
+        s.product_id = p.product_id
+    AND s.quantity - s.reserved_qty > 0
+       )
+
+ORDER BY p.sku;
+
+
+-- 66
+-- Поиск товаров, которые не хранятся ни в одной
+-- транспортной упаковке со статусом STORED.
+
+SELECT
+    p.sku,
+    p.product_name
+
+FROM product AS p
+
+WHERE NOT EXISTS(
+    SELECT 1
+    FROM
+        stock AS s
+    JOIN
+            transport_package AS tp
+    ON tp.package_id = s.package_id
+    WHERE
+        p.product_id = s.product_id
+    AND tp.package_status = 'STORED'
+)
+
+ORDER BY  p.sku ASC;
+
+
+-- 67
+-- Поиск товаров, общий остаток которых выше
+-- среднего общего остатка по всем товарам.
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity ) AS total_quantity
+
+FROM product AS p
+
+JOIN
+    stock AS s
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+HAVING sum(s.quantity) > (
+    SELECT AVG(total_quantity)
+FROM(
+    SELECT product_id,
+           SUM(quantity) AS total_quantity
+    FROM stock
+    GROUP BY product_id
+    ) AS product_totals)
+
+ORDER BY
+    total_quantity DESC,
+    p.sku ASC;
+
+
+-- 68
+-- Поиск товаров, общий доступный остаток которых
+-- выше среднего доступного остатка по всем товарам.
+
+SELECT
+    p.sku,
+    p.product_name,
+    (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity
+
+FROM
+    product AS p
+
+JOIN
+        stock AS s
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+HAVING
+    (SUM(s.quantity) - SUM(s.reserved_qty)) > (
+        SELECT AVG(available_quantity)
+FROM(
+        SELECT product_id,
+               (SUM(quantity) - SUM(reserved_qty)) AS available_quantity
+        FROM stock
+        GROUP BY product_id) AS available_totals
+        )
+
+ORDER BY
+    available_quantity DESC,
+    p.sku ASC;
