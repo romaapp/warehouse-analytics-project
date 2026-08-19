@@ -434,3 +434,212 @@ ORDER BY
 -- 87
 -- Распределение товаров по четырём группам
 -- в зависимости от доступного остатка.
+
+SELECT
+    aq.sku,
+    aq.product_name,
+    aq.total_quantity,
+    aq.available_quantity,
+    NTILE(4) OVER (
+        ORDER BY  aq.available_quantity DESC
+        ) AS quantity_group
+
+FROM (
+    SELECT
+        p.sku,
+        p.product_name,
+        SUM(s.quantity) AS total_quantity,
+        (SUM(s.quantity) - SUM(s.reserved_qty)) AS available_quantity
+    FROM
+        product AS p
+    JOIN
+            stock AS s
+    ON p.product_id = s.product_id
+    GROUP BY
+        p.sku,
+        p.product_name
+     ) AS aq
+
+ORDER BY
+    quantity_group ASC,
+    aq.available_quantity DESC,
+    aq.sku ASC;
+
+-- 88
+-- Расчёт относительного положения товаров
+-- по размеру общего остатка.
+
+SELECT
+    tq.sku,
+    tq.product_name,
+    tq.total_quantity,
+    PERCENT_RANK() OVER (
+        ORDER BY tq.total_quantity DESC
+        ) AS percent_rank
+
+FROM (
+    SELECT
+        p.sku,
+        p.product_name,
+        SUM(s.quantity) AS total_quantity
+    FROM
+        product AS p
+    JOIN
+            stock AS s
+    ON p.product_id = s.product_id
+    GROUP BY
+        p.sku,
+        p.product_name
+     ) AS tq
+
+ORDER BY
+    percent_rank ASC,
+    tq.sku ASC;
+
+
+-- 89
+-- Расчёт накопительной доли товаров
+-- по размеру общего остатка.
+
+SELECT
+    tq.sku,
+    tq.product_name,
+    tq.total_quantity,
+    CUME_DIST() OVER (
+        ORDER BY tq.total_quantity DESC
+        ) AS cumulative_distribution
+
+FROM (
+    SELECT
+        p.sku,
+        p.product_name,
+        SUM(s.quantity) AS total_quantity
+    FROM
+        product AS p
+    JOIN
+            stock AS s
+    ON p.product_id = s.product_id
+    GROUP BY
+        p.sku,
+        p.product_name
+     ) AS tq
+
+ORDER BY
+    cumulative_distribution ASC,
+    tq.sku ASC;
+
+
+-- 90
+-- Сравнение ранга товаров по общему остатку
+-- с использованием RANK() и DENSE_RANK().
+
+SELECT
+    p.sku,
+    p.product_name,
+    SUM(s.quantity) AS total_quantity,
+    RANK() OVER (
+        ORDER BY SUM(s.quantity) DESC
+        ) AS rank_num,
+    DENSE_RANK() OVER (
+        ORDER BY SUM(s.quantity) DESC
+        ) AS dense_rank_num
+
+FROM
+    product AS p
+
+JOIN
+        stock AS s
+
+ON p.product_id = s.product_id
+
+GROUP BY
+    p.sku,
+    p.product_name
+
+ORDER BY
+    total_quantity DESC,
+    p.sku ASC;
+
+
+-- 91
+-- Нумерация stock-записей внутри каждого товара
+-- по количеству товара от большего к меньшему.
+
+SELECT
+    s.stock_id,
+    s.product_id,
+    s.quantity,
+    ROW_NUMBER() OVER (
+        PARTITION BY s.product_id
+        ORDER BY s.quantity DESC
+        ) AS row_num
+
+FROM
+        stock AS s
+
+ORDER BY
+    s.product_id ASC,
+    row_num ASC;
+
+
+-- 92
+-- Поиск stock-записи с максимальным количеством
+-- для каждого product_id.
+
+SELECT
+    rq.stock_id,
+    rq.product_id,
+    rq.quantity
+
+FROM (
+    SELECT
+        s.stock_id,
+        s.product_id,
+        s.quantity,
+        ROW_NUMBER() OVER (
+            PARTITION BY s.product_id
+            ORDER BY s.quantity DESC
+            ) AS max_row
+    FROM
+        stock AS s
+     ) AS rq
+
+WHERE
+    rq.max_row = 1
+
+ORDER BY
+    rq.product_id ASC;
+
+
+-- 93
+-- Поиск последней stock-записи
+-- для каждого product_id.
+
+SELECT
+    rq.stock_id,
+    rq.product_id,
+    rq.quantity
+
+FROM (
+    SELECT
+        s.stock_id,
+        s.product_id,
+        s.quantity,
+        ROW_NUMBER() OVER (
+            PARTITION BY s.product_id
+            ORDER BY s.stock_id DESC
+            ) AS max_row
+    FROM
+        stock AS s
+     ) AS rq
+
+WHERE
+    rq.max_row = 1
+
+ORDER BY
+    rq.product_id ASC;
+
+
+-- 94
+-- Поиск товара с максимальным остатком
+-- в каждой зоне.
